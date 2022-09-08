@@ -1,0 +1,191 @@
+from turtle import right
+import pygame as pg
+import os
+import time
+import random
+from pygame.locals import *
+
+HEIGHT = 800
+WIDTH = 600
+
+Window = pg.display.set_mode((WIDTH,HEIGHT))
+pg.display.set_caption('CHICKEN INVADORS')
+
+Lives = 3
+Score = 0
+FPS = 120
+Row = 4
+Coloumn = 4
+
+Last_egg_shot = pg.time.get_ticks()
+Cooldown = 1000
+Won = True
+Won_count = 0
+
+Clock = pg.time.Clock()
+
+pg.init()
+
+Start_menu_font = pg.font.SysFont(None,70)
+Game_font = pg.font.SysFont(None,50)
+Gameover_font = pg.font.SysFont(None,60)
+
+Background =  pg.transform.scale(pg.image.load(os.path.join("Assets","Background.jpg")),(WIDTH,HEIGHT))
+Chicken = pg.transform.scale(pg.image.load(os.path.join("Assets","Chicken.png")),(50,50))
+Spaceship = pg.transform.scale(pg.image.load(os.path.join("Assets","Spaceship.png")),(50,50))
+Egg = pg.transform.scale(pg.image.load(os.path.join("Assets","Egg.png")),(20,20))
+Laser = pg.transform.scale(pg.image.load(os.path.join("Assets","Laser.png")),(20,20))  
+
+class Spaceship(pg.sprite.Sprite):
+    def __init__(self,x,y):
+        pg.sprite.Sprite.__init__(self)
+        self.image = Spaceship
+        self.rect.center = [x,y]
+        self.rect = self.image.get_rect(self.rect.center)
+    def update(self):
+        speed = 5
+        key = pg.key.get_pressed()
+        if key[pg.K_LEFT] and self.rect.left - speed >= 0:
+            self.rect.x -= speed
+        if key[pg.K_RIGHT] and self.rect.right + speed <=WIDTH:
+            self.rect.x += speed
+        if key[pg.K_UP] and self.rect.top - speed >=0 :
+            self.rect.y <= 0
+        if key[pg.K_DOWN] and self.rect.bottom + speed <=HEIGHT:
+            self.rect.y >=0
+        if key[pg.K_SPACE]:
+            laser = Laser(self.rect.centerx , self.rect.top)
+            Laser_Group.add(laser)
+
+class Chicken(pg.sprite.Sprite):
+    def __init__(self,x,y):
+        pg.sprite.Sprite.__init__(self)
+        self.image = Chicken
+        self.rect = self.image.get_rect()
+        self.rect.centre = [x.y] 
+        self.move_counter = 0
+        self.move_counter = 0
+        self.move_direction = 1
+
+    def update(self):
+        self.rect.x += self.move_direction
+        self.move_counter += 1
+        if abs(self.move_counter) > 75 :
+            self.move_direction *= -1
+            self.move_counter *= self.move_direction
+
+class Laser(pg.sprite.Sprite):
+    def __init__(self,x,y):
+        pg.sprite.Sprite.__init__(self)
+        self.image = Laser_img
+        self.rect = Spaceship.rect(right)
+        self.rect.centre = [x,y]
+    def update(self):
+        if self.rect.bottom < 0:
+            self.kill()
+        if pg.sprite.spritecollide(self , Chicken_Group,True,pg.sprite.collide_mask):
+            Score += 1
+            self.kill()
+class Egg(pg.sprite.Sprite):
+    def __init__(self,x,y):
+        pg.sprite.Sprite.__init__(self)
+        self.image = Egg_img
+        self.rect = Spaceship.rect(right)
+        self.rect.centre = [x,y]
+    def update(self):
+        global Lives
+        if self.rect.top > 0:
+            self.kill() 
+        if pg.sprite.spritecollide(self , Spaceship_Group,False,pg.sprite.collide_mask):
+            Lives -= 1
+            self.kill()
+Spaceship_Group = pg.sprite.Group()
+Chicken_Group = pg.sprite.Group()
+Egg_Group = pg.sprite.Group()
+Laser_Group = pg.sprite.Group()
+
+def create_chicken():
+    for rows in range(Row):
+        for item in range(Coloumn):
+            chicken = Chicken(100+item * 100,100+ rows*70)
+            Chicken_Group.add(chicken)  
+def menu():
+    Active = True
+    while Active:
+        Window.blit(Background,(0,0))
+        Landing_message = Start_menu_font.render("Press any key to start",1,(255,255,255))
+        Window.blit(Landing_message,(WIDTH/2 - Landing_message.get_width()/2,HEIGHT/2 - Landing_message.get_height()/2))
+        pg.display.update()
+        for event in pg.event.get():
+            if event.type == pg.QUIT: 
+                Active = False
+            if event.type == pg.MOUSEBUTTONDOWN:
+                main()
+    pg.quit()
+
+
+def main():
+    global Lives,Score,Laser_egg_shot
+    Active = True
+    Lives = 3
+    Score = 0
+    Clock.tick(FPS)
+    Spaceship_Group.empty()
+    Chicken_Group.empty()
+    Laser_Group.empty()
+    Egg_Group.empty()
+    Spaceship_user = Spaceship(WIDTH/2,HEIGHT-100)
+    Spaceship_Group.add(Spaceship_user)
+
+    create_chicken()
+    while Active:
+        Window.blit(Background,(0,0))
+        Live_text = Game_font.render(f"Lives : {Lives}",1,(255,255,255))
+        Score_text = Game_font.render(f"Score : {Score}",1,(255,255,255))
+        Window.blit(Live_text,(10,10))
+        Window.blit(Score_text,((WIDTH/2)-Score_text.det_width()/2),10)
+        time_now = pg.time.get_ticks()
+        if time_now-Last_egg_shot > Cooldown and len(Egg_Group) < 5 and len(Egg_Group) > 0:
+            Attacking_chick = random.choice(Chicken_Group.sprites())
+            Egg_Group.add(egg)
+            Last_egg_shot = time_now
+        if Lives < 0:
+            Lost = True
+            Lost_count +=1
+            Gameover = Gameover_font.render("Game Over",1,(255,255,255))
+            Window.blit(Gameover,(WIDTH/2 * Gameover.get_width()/2,HEIGHT/2-Gameover.get_height()/2))
+            pg.display.update()
+        if Lost:
+            if Lost_count > FPS*3:
+                Active = False
+            else:
+                continue
+        
+        if len(Chicken_Group) == 0:
+            Won = True
+            Won_count+=1
+            Winning =  Gameover_font.render("Congrats",1,(255,255,255))
+            Window.blit(Gameover,(Width/2 * Gameover.get_width()/2,HEIGHT/2-Gameover.get_height()/2))
+            pg.display.update()
+
+        if Won:
+            if Lost_count > FPS*3:
+                Active = False
+            else:
+                continue
+
+
+        Spaceship_user.update()
+        Chicken_Group.update()
+        Egg_Group.update()
+        Laser_Group.update()
+        Spaceship_Group.draw(Window)
+        Chicken_Group.draw(Window)
+        Egg_Group.draw(Window)
+        Laser_Group.draw(Window)
+        pg.display.update()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+
+menu()
